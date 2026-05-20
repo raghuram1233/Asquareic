@@ -1,0 +1,23 @@
+# CAD Validation System — Dependencies
+# =====================================
+
+# OpenCascade Python bindings (via cadquery's OCP)
+cadquery-ocp>=7.7
+
+# DXF file parsing
+ezdxf>=1.1
+
+# Numerical computing
+numpy>=1.24
+
+# Geometric operations and spatial indexing
+shapely>=2.0
+
+# Scientific computing (Hausdorff distance, clustering)
+scipy>=1.10
+
+# Image-based comparison (crop, align, overlay)
+opencv-python>=4.8
+
+# Visualization / report generation
+matplotlib>=3.7
