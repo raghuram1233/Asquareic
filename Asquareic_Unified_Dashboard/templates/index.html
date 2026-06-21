@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asquareic Engineering CAD Validator & Checker Dashboard</title>
+  <!-- Material Icons for sleek ui symbols -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- CSS Styling link -->
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <!-- Sidebar Menu -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span class="material-icons-outlined logo-icon">ac_unit</span>
+      <div class="logo-text">
+        <h2>Asquareic</h2>
+        <span>CAD Checker Suite</span>
+      </div>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-tab="tab-overview">
+        <span class="material-icons-outlined">dashboard</span>
+        <span>Dashboard Overview</span>
+      </button>
+      <button class="nav-item" data-tab="tab-cad-validator">
+        <span class="material-icons-outlined">compare</span>
+        <span>CAD Validator</span>
+      </button>
+      <button class="nav-item" data-tab="tab-dimension-checker">
+        <span class="material-icons-outlined">architecture</span>
+        <span>Dimension Checker</span>
+      </button>
+      <button class="nav-item" data-tab="tab-notes-checker">
+        <span class="material-icons-outlined">checklist</span>
+        <span>Notes Checker</span>
+      </button>
+      <button class="nav-item" data-tab="tab-nozzle-validator">
+        <span class="material-icons-outlined">layers</span>
+        <span>Nozzle Load Validator</span>
+      </button>
+      <button class="nav-item" data-tab="tab-logs">
+        <span class="material-icons-outlined">terminal</span>
+        <span>System Log Terminal</span>
+      </button>
+    </nav>
+    
+    <div class="sidebar-footer">
+      <div class="sys-pulse"><span class="pulse-dot"></span> System Online</div>
+      <span class="sys-version">v1.1.0</span>
+    </div>
+  </aside>
+
+  <!-- Main View Panel -->
+  <main class="main-content">
+    
+    <!-- HEADER BAR -->
+    <header class="main-header">
+      <div class="header-title">
+        <h1 id="page-title">Dashboard Overview</h1>
+        <p id="page-description">General health diagnostic metrics, past runs, and system settings.</p>
+      </div>
+      <div class="header-actions">
+        <button id="btn-refresh-status" class="btn btn-secondary">
+          <span class="material-icons-outlined">refresh</span>
+          <span>Refresh Diagnostic</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- CONTENT WRAPPER -->
+    <div class="content-body">
+      
+      <!-- ===================================================================
+           TAB: OVERVIEW
+           =================================================================== -->
+      <section id="tab-overview" class="tab-panel active">
+        <div class="overview-grid">
+          
+          <!-- System Status Card -->
+          <div class="card card-status">
+            <div class="card-header">
+              <span class="material-icons-outlined header-icon">tune</span>
+              <h3>Environment Health Diagnostics</h3>
+            </div>
+            <div class="card-body">
+              <div class="diag-list" id="diagnostics-list">
+                <!-- Injected via JS -->
+                <div class="loading-spinner"></div>
+              </div>
+              <div class="oda-path-box">
+                <strong>ODA File Converter Path:</strong>
+                <span id="oda-path-value" class="code-text">Loading...</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Quick Statistics -->
+          <div class="card card-stats">
+            <div class="card-header">
+              <span class="material-icons-outlined header-icon">query_stats</span>
+              <h3>Workspace Path</h3>
+            </div>
+            <div class="card-body">
+              <div class="workspace-display">
+                <span class="material-icons-outlined">folder</span>
+                <span id="workspace-path-text" class="code-text">Loading...</span>
+              </div>
+              <p class="workspace-desc">All absolute pathways are resolved automatically relative to this workspace directory unless absolute links are provided.</p>
+            </div>
+          </div>
+          
+          <!-- Past Runs History -->
+          <div class="card card-history">
+            <div class="card-header">
+              <span class="material-icons-outlined header-icon">history</span>
+              <h3>Execution Runs History</h3>
+            </div>
+            <div class="card-body">
+              <div class="table-container">
+                <table class="data-table" id="runs-history-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Checker Task</th>
+                      <th>Run ID</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Injected via JS -->
+                    <tr><td colspan="5" class="empty-row">No runs executed yet.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           TAB: CAD VALIDATOR
+           =================================================================== -->
+      <section id="tab-cad-validator" class="tab-panel">
+        <div class="split-layout">
+          
+          <!-- Parameter Box -->
+          <div class="panel-sidebar">
+            <div class="card card-form">
+              <div class="card-header">
+                <h3>Pipeline Parameters</h3>
+              </div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label for="cad-step-input">STEP Model Path (.STEP, .stp)</label>
+                  <div class="input-browse">
+                    <input type="text" id="cad-step-input" placeholder="e.g. Data/Model.STEP">
+                    <button class="btn btn-browse" data-target="cad-step-input">Browse</button>
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label for="cad-drawing-input">Drawing Sheet Path (.dwg, .dxf)</label>
+                  <div class="input-browse">
+                    <input type="text" id="cad-drawing-input" placeholder="e.g. Data2">
+                    <button class="btn btn-browse" data-target="cad-drawing-input">Browse</button>
+                  </div>
+                  <span class="field-hint">Select a folder of 6 DXFs, or a DWG/DXF sheet drawing that will be auto-split.</span>
+                </div>
+                
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="cad-scale-input">Drawing Scale multiplier</label>
+                    <input type="number" id="cad-scale-input" value="1.0" step="any">
+                  </div>
+                </div>
+                
+                <div class="rotations-section">
+                  <h4 class="section-sub-title">Per-View DXF Rotation angle (Degrees)</h4>
+                  <div class="rotations-grid">
+                    <div class="rot-cell"><label>FRONT</label><select id="rot-front"><option value="0">0</option><option value="90">90</option><option value="180">180</option><option value="270">270</option></select></div>
+                    <div class="rot-cell"><label>BACK</label><select id="rot-back"><option value="0">0</option><option value="90">90</option><option value="180">180</option><option value="270">270</option></select></div>
+                    <div class="rot-cell"><label>TOP</label><select id="rot-top"><option value="0">0</option><option value="90">90</option><option value="180">180</option><option value="270">270</option></select></div>
+                    <div class="rot-cell"><label>BOTTOM</label><select id="rot-bottom"><option value="0">0</option><option value="90">90</option><option value="180">180</option><option value="270">270</option></select></div>
+                    <div class="rot-cell"><label>LEFT</label><select id="rot-left"><option value="0">0</option><option value="90">90</option><option value="180">180</option><option value="270">270</option></select></div>
+                    <div class="rot-cell"><label>RIGHT</label><select id="rot-right"><option value="0">0</option><option value="90">90</option><option value="180">180</option><option value="270">270</option></select></div>
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button id="btn-run-cad" class="btn btn-primary btn-block">
+                    <span class="material-icons-outlined">play_arrow</span>
+                    <span>Run CAD Validator</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Progress log widget -->
+            <div id="cad-progress-box" class="card progress-log-card hidden">
+              <div class="card-header">
+                <h3>Execution Progress Log</h3>
+              </div>
+              <div class="card-body">
+                <div class="log-stream-preview" id="cad-stream-preview"></div>
+                <div class="progress-bar-container">
+                  <div class="progress-bar-fill indeterminate"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Results Visualization Column -->
+          <div class="panel-content">
+            <div class="card card-results-visual flex-column">
+              <div class="visual-header-bar">
+                <div class="score-badge" id="cad-score-badge">No results yet</div>
+                
+                <!-- View selector buttons (6 standard orthographic views) -->
+                <div class="button-toggle-group" id="cad-view-selector">
+                  <button class="toggle-btn active" data-view="front">FRONT</button>
+                  <button class="toggle-btn" data-view="back">BACK</button>
+                  <button class="toggle-btn" data-view="top">TOP</button>
+                  <button class="toggle-btn" data-view="bottom">BOTTOM</button>
+                  <button class="toggle-btn" data-view="left">LEFT</button>
+                  <button class="toggle-btn" data-view="right">RIGHT</button>
+                </div>
+              </div>
+              
+              <!-- Mode selector buttons (Diff, Overlay, Model, Drawing) -->
+              <div class="visual-mode-bar">
+                <div class="button-toggle-group secondary" id="cad-mode-selector">
+                  <button class="toggle-btn active" data-mode="diff">Diff Image</button>
+                  <button class="toggle-btn" data-mode="overlay">Overlay Overlay</button>
+                  <button class="toggle-btn" data-mode="model_cropped">STEP 3D Model</button>
+                  <button class="toggle-btn" data-mode="drawing_cropped">2D DXF Drawing</button>
+                </div>
+                <div id="cad-view-metrics" class="view-metrics-text"></div>
+              </div>
+              
+              <div class="visualizer-canvas-container">
+                <!-- Zoomable Image Viewport -->
+                <div class="zoom-viewport" id="cad-zoom-viewport">
+                  <div class="zoom-content" id="cad-zoom-content">
+                    <img id="cad-result-img" src="" alt="Run comparison to see validation visualization image" class="placeholder-img">
+                  </div>
+                </div>
+                <div class="zoom-controls">
+                  <button class="zoom-btn" id="cad-zoom-in"><span class="material-icons-outlined">add</span></button>
+                  <button class="zoom-btn" id="cad-zoom-out"><span class="material-icons-outlined">remove</span></button>
+                  <button class="zoom-btn" id="cad-zoom-reset"><span class="material-icons-outlined">crop_free</span></button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           TAB: DIMENSION CHECKER
+           =================================================================== -->
+      <section id="tab-dimension-checker" class="tab-panel">
+        <div class="split-layout">
+          
+          <!-- Parameters Input -->
+          <div class="panel-sidebar">
+            <div class="card card-form">
+              <div class="card-header">
+                <h3>Select Drawing</h3>
+              </div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label for="dim-drawing-input">AutoCAD Drawing (.dwg, .dxf)</label>
+                  <div class="input-browse">
+                    <input type="text" id="dim-drawing-input" placeholder="e.g. Asquareic_Dimension_validator/Input/CL201.dwg">
+                    <button class="btn btn-browse" data-target="dim-drawing-input">Browse</button>
+                  </div>
+                  <span class="field-hint">Reads dimensions and validates them against structural CAD geometries.</span>
+                </div>
+                
+                <div class="form-actions">
+                  <button id="btn-run-dim" class="btn btn-primary btn-block">
+                    <span class="material-icons-outlined">play_arrow</span>
+                    <span>Run Dimension Checker</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div id="dim-progress-box" class="card progress-log-card hidden">
+              <div class="card-header">
+                <h3>Execution Log</h3>
+              </div>
+              <div class="card-body">
+                <div class="log-stream-preview" id="dim-stream-preview"></div>
+                <div class="progress-bar-container">
+                  <div class="progress-bar-fill indeterminate"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Results Viewer Column -->
+          <div class="panel-content split-vertical">
+            
+            <!-- Matplotlib Validation Badges Layout -->
+            <div class="card visualizer-canvas-container flex-grow">
+              <div class="card-header border-bottom">
+                <h3>Visual CAD Badges Overlay</h3>
+                <span class="header-tip">Interactively pan (click & drag) and zoom. Green indicates matches, Red flags discrepancies.</span>
+              </div>
+              <div class="zoom-viewport" id="dim-zoom-viewport">
+                <div class="zoom-content" id="dim-zoom-content">
+                  <img id="dim-result-img" src="" alt="Validated drawing badge overlay will render here" class="placeholder-img">
+                </div>
+              </div>
+              <div class="zoom-controls">
+                <button class="zoom-btn" id="dim-zoom-in"><span class="material-icons-outlined">add</span></button>
+                <button class="zoom-btn" id="dim-zoom-out"><span class="material-icons-outlined">remove</span></button>
+                <button class="zoom-btn" id="dim-zoom-reset"><span class="material-icons-outlined">crop_free</span></button>
+              </div>
+            </div>
+            
+            <!-- Table list of verified dimensions -->
+            <div class="card card-results-table">
+              <div class="card-header">
+                <h3>Detected Dimension Verification List</h3>
+                <div id="dim-summary-badge" class="result-summary-text">No results</div>
+              </div>
+              <div class="card-body">
+                <div class="table-container list-height-limit">
+                  <table class="data-table" id="dim-results-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Dim Text</th>
+                        <th>CAD Length</th>
+                        <th>Entity Type</th>
+                        <th>Result Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td colspan="5" class="empty-row">Run checker to extract and check dimensions.</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            
+          </div>
+          
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           TAB: NOTES CHECKER
+           =================================================================== -->
+      <section id="tab-notes-checker" class="tab-panel">
+        <div class="split-layout">
+          
+          <!-- Parameters Input -->
+          <div class="panel-sidebar">
+            <div class="card card-form">
+              <div class="card-header">
+                <h3>Check inputs</h3>
+              </div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label for="notes-drawing-input">AutoCAD Drawing (.dwg, .dxf)</label>
+                  <div class="input-browse">
+                    <input type="text" id="notes-drawing-input" placeholder="e.g. Asquareic_Notes_checker/inputs/Biocide Vessel.dwg">
+                    <button class="btn btn-browse" data-target="notes-drawing-input">Browse</button>
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label for="notes-docx-input">PV Elite mechanical report (.docx)</label>
+                  <div class="input-browse">
+                    <input type="text" id="notes-docx-input" placeholder="e.g. Asquareic_Notes_checker/inputs/Biocide Chemical Injection 6209-04.docx">
+                    <button class="btn btn-browse" data-target="notes-docx-input">Browse</button>
+                  </div>
+                </div>
+                
+                <div class="form-actions">
+                  <button id="btn-run-notes" class="btn btn-primary btn-block">
+                    <span class="material-icons-outlined">play_arrow</span>
+                    <span>Run Notes Checker</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div id="notes-progress-box" class="card progress-log-card hidden">
+              <div class="card-header">
+                <h3>Execution Log</h3>
+              </div>
+              <div class="card-body">
+                <div class="log-stream-preview" id="notes-stream-preview"></div>
+                <div class="progress-bar-container">
+                  <div class="progress-bar-fill indeterminate"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Verification checklist output -->
+          <div class="panel-content">
+            <div class="card card-results-checklist flex-column">
+              <div class="card-header">
+                <h3>Parameters Validation Checklist Report</h3>
+                <div id="notes-summary-badge" class="result-summary-text">No results</div>
+              </div>
+              <div class="card-body">
+                <div class="table-container">
+                  <table class="data-table" id="notes-results-table">
+                    <thead>
+                      <tr>
+                        <th>Field Name</th>
+                        <th>Expected Value (PV Elite Report)</th>
+                        <th>Found Value (CAD Drawing)</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td colspan="4" class="empty-row">Run validation to inspect parameters checklist.</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           TAB: NOZZLE VALIDATOR
+           =================================================================== -->
+      <section id="tab-nozzle-validator" class="tab-panel">
+        <div class="split-layout">
+          
+          <!-- Parameters inputs panel -->
+          <div class="panel-sidebar">
+            <div class="card card-form">
+              <div class="card-header">
+                <h3>Validation details</h3>
+              </div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label for="nozzle-drawing-input">AutoCAD Drawing (.dwg, .dxf)</label>
+                  <div class="input-browse">
+                    <input type="text" id="nozzle-drawing-input" placeholder="e.g. Asquareic_Nozzle_Load/Input/Drawing_with_nozzles.dwg">
+                    <button class="btn btn-browse" data-target="nozzle-drawing-input">Browse</button>
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label for="nozzle-allowables-input">Allowable Loads Database (.csv)</label>
+                  <div class="input-browse">
+                    <input type="text" id="nozzle-allowables-input" placeholder="e.g. Asquareic_Nozzle_Load/nozzle_allowables.csv">
+                    <button class="btn btn-browse" data-target="nozzle-allowables-input">Browse</button>
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label for="nozzle-project">Project Name</label>
+                  <input type="text" id="nozzle-project" value="Pressure Vessel Nozzle Load Check">
+                </div>
+                
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="nozzle-temp">Design Temp (&deg;C)</label>
+                    <input type="number" id="nozzle-temp" value="58.0" step="any">
+                  </div>
+                  <div class="form-group">
+                    <label for="nozzle-derating">Derating factor</label>
+                    <input type="number" id="nozzle-derating" value="1.0" step="any">
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label for="nozzle-refdoc">Reference Standard / Table</label>
+                  <input type="text" id="nozzle-refdoc" value="AGES-SP-06-001 Rev.1 Table A2-2">
+                </div>
+                
+                <div class="form-actions">
+                  <button id="btn-run-nozzle" class="btn btn-primary btn-block">
+                    <span class="material-icons-outlined">play_arrow</span>
+                    <span>Run Nozzle Validator</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div id="nozzle-progress-box" class="card progress-log-card hidden">
+              <div class="card-header">
+                <h3>Execution Log</h3>
+              </div>
+              <div class="card-body">
+                <div class="log-stream-preview" id="nozzle-stream-preview"></div>
+                <div class="progress-bar-container">
+                  <div class="progress-bar-fill indeterminate"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Detailed HTML iframe results output -->
+          <div class="panel-content">
+            <div class="card card-results-iframe flex-column">
+              <div class="card-header border-bottom">
+                <h3>Nozzle Validation Report Panel</h3>
+                <button id="btn-open-nozzle-report" class="btn btn-secondary btn-small hidden">
+                  <span class="material-icons-outlined">open_in_new</span> Open Report File
+                </button>
+              </div>
+              <div class="iframe-container" id="nozzle-report-wrapper">
+                <div class="nozzle-placeholder">
+                  <span class="material-icons-outlined">feed</span>
+                  <p>Run the nozzle load checker to compile and view the engineering table report.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           TAB: SYSTEM LOGS
+           =================================================================== -->
+      <section id="tab-logs" class="tab-panel">
+        <div class="card card-terminal flex-column">
+          <div class="card-header border-bottom">
+            <span class="material-icons-outlined header-icon">terminal</span>
+            <h3>System Execution stdout Logs</h3>
+            <button id="btn-clear-terminal" class="btn btn-secondary btn-small">Clear Log Console</button>
+          </div>
+          <div class="terminal-body" id="log-terminal-output">
+            <div class="terminal-line system-line">[SYSTEM] Dashboard console active. Run pipelines to capture process streams.</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ===================================================================
+       FILE BROWSER MODAL
+       =================================================================== -->
+  <div class="modal-backdrop" id="file-browser-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span class="material-icons-outlined">folder_open</span>
+          <h3>Local File Browser Selector</h3>
+        </div>
+        <button class="modal-close" id="btn-close-browser">&times;</button>
+      </div>
+      
+      <div class="modal-search-bar">
+        <button id="btn-browser-back" class="btn-icon"><span class="material-icons-outlined">arrow_back</span></button>
+        <input type="text" id="browser-current-path" readonly>
+      </div>
+      
+      <div class="modal-body">
+        <div class="browser-listing" id="browser-listing-container">
+          <!-- Injected via JS -->
+          <div class="loading-spinner"></div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <div class="selected-file-display">
+          <strong>Selected:</strong> <span id="browser-selected-display" class="code-text">None</span>
+        </div>
+        <button id="btn-browser-select" class="btn btn-primary" disabled>Select Path</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript scripts link -->
+  <script src="/static/js/main.js"></script>
+</body>
+</html>

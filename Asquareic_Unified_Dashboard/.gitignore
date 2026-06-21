@@ -1,0 +1,12 @@
+# Ignore dynamically generated run outputs and reports
+runs/
+
+# Ignore Python cache directories and bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore local environment or OS metadata
+.DS_Store
+Thumbs.db
