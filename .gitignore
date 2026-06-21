@@ -5,3 +5,5 @@ Data
 Data2
 Data_gen
 results
+.vscode/
+__pycache__/

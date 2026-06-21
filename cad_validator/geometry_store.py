@@ -44,10 +44,10 @@ class ViewName(str, Enum):
 VIEW_DEFINITIONS: Dict[ViewName, Dict[str, Tuple[float, float, float]]] = {
     ViewName.FRONT:  {"direction": (0.0, -1.0, 0.0),  "up": (0.0, 0.0, 1.0)},
     ViewName.BACK:   {"direction": (0.0,  1.0, 0.0),  "up": (0.0, 0.0, 1.0)},
-    ViewName.TOP:    {"direction": (0.0,  0.0, -1.0), "up": (0.0, 1.0, 0.0)},
-    ViewName.BOTTOM: {"direction": (0.0,  0.0,  1.0), "up": (0.0, -1.0, 0.0)},
-    ViewName.LEFT:   {"direction": (-1.0, 0.0, 0.0),  "up": (0.0, 0.0, 1.0)},
-    ViewName.RIGHT:  {"direction": (1.0,  0.0, 0.0),  "up": (0.0, 0.0, 1.0)},
+    ViewName.TOP:    {"direction": (0.0,  0.0,  1.0), "up": (0.0, -1.0, 0.0)},
+    ViewName.BOTTOM: {"direction": (0.0,  0.0, -1.0), "up": (0.0, 1.0, 0.0)},
+    ViewName.LEFT:   {"direction": (1.0,  0.0, 0.0),  "up": (0.0, 0.0, 1.0)},
+    ViewName.RIGHT:  {"direction": (-1.0, 0.0, 0.0),  "up": (0.0, 0.0, 1.0)},
 }
 
 

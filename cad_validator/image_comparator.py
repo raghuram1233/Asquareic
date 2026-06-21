@@ -182,8 +182,11 @@ class ImageComparator:
         logger.info("ImageComparator: processing view %s", view_name.value)
 
         # ── Step 0: Filter outliers ───────────────────────────────────
-        model_edges_clean = self.filter_outliers(model_geom.edges)
-        drawing_edges_clean = self.filter_outliers(drawing_geom.edges)
+        # Use every extracted edge for final comparison. The DXF splitter now
+        # removes borders/dimensions before this point, so dominant-cluster
+        # filtering would hide valid separated details in the final diff.
+        model_edges_clean = model_geom.edges
+        drawing_edges_clean = drawing_geom.edges
 
         # ── Step 1: Render both geometries to images ──────────────────
         model_raw = self.render_geometry(

@@ -69,6 +69,18 @@ def main():
         idx = args.index("--output")
         if idx + 1 < len(args):
             output_dir = args[idx + 1]
+    drawing_scale = 1.0
+    if "--scale" in args:
+        idx = args.index("--scale")
+        if idx + 1 < len(args):
+            try:
+                drawing_scale = float(args[idx + 1])
+            except ValueError:
+                print(f"Error: Invalid --scale value: {args[idx + 1]}")
+                sys.exit(1)
+    if drawing_scale <= 0:
+        print("Error: --scale must be greater than zero")
+        sys.exit(1)
 
     # Validate inputs
     if not Path(step_file).exists():
@@ -84,6 +96,7 @@ def main():
     config = PipelineConfig(
         views=selected_views,
         output_dir=output_dir,
+        drawing_scale=drawing_scale,
     )
 
     pipeline = Pipeline(config)

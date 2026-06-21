@@ -40,6 +40,8 @@ class PipelineConfig:
         include_hidden: bool = False,
         # DXF parsing
         # (Parser now strictly operates on 1 file per view)
+        drawing_scale: float = 1.0,
+        drawing_view_rotations: Optional[Dict[ViewName, float]] = None,
 
         # Matching
         match_distance_threshold: float = 0.05,
@@ -54,6 +56,8 @@ class PipelineConfig:
     ):
         self.deflection = deflection
         self.include_hidden = include_hidden
+        self.drawing_scale = drawing_scale
+        self.drawing_view_rotations = drawing_view_rotations or {}
 
 
         self.match_distance_threshold = match_distance_threshold
@@ -164,15 +168,21 @@ class Pipeline:
         logger.info("  Extracted %d drawing edges in %.2fs",
                      total_drawing_edges, time.time() - t)
 
+        self._apply_drawing_view_rotations(drawing_views)
+
         # ── Step 6: Normalize (geometry-based) ─────────────────────
-        logger.info("── Step 6/9: Fitting drawings to model size and position ──")
+        logger.info("── Step 6/9: Scaling drawings and preserving orientation ──")
         t = time.time()
-        normalizer = Normalizer()
+        normalizer = Normalizer(drawing_scale=self.config.drawing_scale)
         norm_model = deepcopy(model_views)
         norm_drawing = normalizer.fit_all_drawings_to_models(
             model_views, deepcopy(drawing_views)
         )
-        logger.info("  Fitted drawings in %.2fs", time.time() - t)
+        logger.info(
+            "  Applied drawing scale %.6f without rotation/mirroring in %.2fs",
+            self.config.drawing_scale,
+            time.time() - t,
+        )
 
         # ── Step 6.5: Image-based visual comparison ───────────────────
         logger.info("── Step 6.5/9: Image-based visual comparison ──")
@@ -247,3 +257,40 @@ class Pipeline:
         logger.info("=" * 60)
 
         return report
+
+    def _apply_drawing_view_rotations(
+        self,
+        drawing_views: Dict[ViewName, "ViewGeometry"],
+    ) -> None:
+        """Rotate selected drawing views around their own center before comparison."""
+        import math
+        import numpy as np
+
+        for view_name, degrees in self.config.drawing_view_rotations.items():
+            if not degrees or view_name not in drawing_views:
+                continue
+
+            view_geom = drawing_views[view_name]
+            point_sets = [edge.points for edge in view_geom.edges if len(edge.points)]
+            if not point_sets:
+                continue
+
+            all_points = np.vstack(point_sets)
+            center = all_points.mean(axis=0)
+            radians = math.radians(float(degrees))
+            c, s = math.cos(radians), math.sin(radians)
+            matrix = np.array([[c, -s], [s, c]], dtype=np.float64)
+
+            for edge in view_geom.edges:
+                if len(edge.points):
+                    edge.points = (edge.points - center) @ matrix.T + center
+                    if len(edge.points) > 1:
+                        diffs = np.diff(edge.points, axis=0)
+                        edge.length = float(np.sum(np.linalg.norm(diffs, axis=1)))
+                    edge.params["_gui_rotation_degrees"] = float(degrees)
+
+            logger.info(
+                "Applied GUI rotation %.1f degrees to %s drawing view",
+                degrees,
+                view_name.value,
+            )

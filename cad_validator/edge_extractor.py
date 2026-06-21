@@ -148,7 +148,7 @@ class EdgeExtractor:
         _require_ocp()
         explorer = TopExp_Explorer(shape, TopAbs_EDGE)
         while explorer.More():
-            topo_edge = TopoDS.Edge(explorer.Current())
+            topo_edge = TopoDS.Edge_s(explorer.Current())
             try:
                 edge2d = self._process_edge(topo_edge)
                 if edge2d is not None:

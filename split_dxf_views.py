@@ -263,10 +263,16 @@ def should_include_entity(entity: Entity, frame: Box, frame_entity: Entity, marg
     if box is None:
         return False
 
+    # Sheet borders and title-block lines overlap every view frame. Reject
+    # entities that are obviously much larger than one view before allowing
+    # overlap-based inclusion, otherwise legitimate crossing edges can be lost.
+    if box.width > frame.width * 1.25 or box.height > frame.height * 1.25:
+        return False
+
     if box.area == 0.0:
         return frame.contains_point(*box.center, margin=margin)
 
-    return frame.contains_box(box, margin=margin) or frame.contains_point(*box.center, margin=margin)
+    return frame.contains_box(box, margin=margin) or frame.overlaps(box, margin=margin)
 
 
 def write_dxf(path: Path, prefix: list[tuple[str, str]], entities: list[Entity], suffix: list[tuple[str, str]]) -> None:

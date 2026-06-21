@@ -1,0 +1,47 @@
+CAD Validator - Contest Submission Questionnaire
+
+1. Features and Functionalities
+The CAD Validator is an automated engineering tool designed to verify that 2D manufacturing drawings accurately represent the source 3D CAD models. Its core features include:
+- Automated Orthographic Projection: Automatically reads 3D STEP models and generates the six standard orthographic views (Front, Back, Top, Bottom, Left, Right).
+- Precise Hidden Line Removal (HLR): Leverages the OpenCascade (OCP) kernel to accurately compute visible, hidden, and smooth edges from the 3D model.
+- Intelligent Drawing Parsing: Automatically parses sheet-style DXF/DWG files, locates green view-bounding frames, reads text labels, and extracts the individual views.
+- Dual-Mode Comparison Engine:
+  - Vector-based Geometric Matching: Discretizes edges and uses Hausdorff distance calculations and bounding-box clustering to find geometric discrepancies (missing, extra, or modified edges).
+  - Raster-based Image Comparison: Uses OpenCV to align, crop, and overlay pixel data, generating an overall Overlap Score, Model Coverage, and Drawing Coverage metric.
+- Automated Reporting & Visualization: Generates comprehensive visual overlays highlighting differences in distinct colors (e.g., Red for missing, Blue for extra, Orange for modified) and exports structured JSON summaries.
+- Interactive Desktop GUI: Provides a Tkinter-based graphical interface for engineers to easily select files, configure view rotations, and visually step through the detected differences view-by-view.
+
+2. Usage, Usability, and Operational Constraints
+- Usage: Engineers use the tool as a pre-release check before sending designs to manufacturing, ensuring that a 2D drawing (DWG/DXF) perfectly aligns with the 3D source of truth (STEP).
+- Usability: The interface is designed for minimal configuration. The user only needs to select the input files, define the drawing scale, and click "Run Comparison." The GUI provides immediate, browseable visual feedback.
+- Operational Constraints:
+  - Input Formats: The 3D model must be in STEP/STP format; the drawing must be in DWG or DXF format.
+  - DWG Conversion: Processing native DWG files relies on the presence of the external ODAFileConverter utility installed on the host system.
+  - Drawing Conventions: The system expects 2D drawings to follow a specific layout convention where each view is surrounded by a designated bounding frame (e.g., green LWPOLYLINE) and labeled with standard text (e.g., "Front", "Top").
+  - Environment Requirements: Strictly requires a Python environment with cadquery-ocp (OpenCascade bindings) and specific scientific libraries (numpy, scipy, opencv-python), which limits deployment to systems supporting these binaries (typically Windows x64).
+
+3. Performance Parameters and Metrics
+The system assesses accuracy and performance using the following metrics:
+- Geometric Match Score: A calculated ratio (0.0 to 1.0) of perfectly matched edges versus the total edges (matched + missing + extra + modified).
+- Image Overlap Scores: Pixel-level evaluation metrics including:
+  - Overlap Score: Percentage of intersecting pixels between the drawing and the model.
+  - Model / Drawing Coverage: How completely the model is represented by the drawing, and vice versa.
+- Processing Speed: Time taken to load the STEP file, generate projections, and perform the diff. Execution time directly correlates with the topological complexity (number of faces/edges) of the 3D model.
+- Tolerance Parameters: Deflection thresholds (e.g., 0.01 mm) for discretizing curves, and minimum distance constraints for matching edges.
+
+4. Integration and Verification to Target Platform
+- Standalone Operation: The tool integrates directly into the Windows desktop environment as a standalone graphical application (gui.py).
+- External Integrations: It seamlessly integrates with the file system and invokes external third-party tools (like ODA File Converter) via subprocesses. 
+- CI/CD Readiness: The underlying pipeline (cad_validator.pipeline) is fully decoupled from the GUI, allowing it to be invoked headlessly via CLI scripts for integration into Continuous Integration/Continuous Deployment (CI/CD) or PDM/PLM workflows.
+- Verification: The deployment is verified by running isolated Python virtual environments (e.g., Conda) ensuring that complex C++ bindings (OpenCascade) and their native DLL dependencies resolve correctly on the target Windows platform.
+
+5. Test Plans and Procedures for End User Trials
+To ensure reliability during end-user trials, the following testing procedures should be followed:
+1. Golden Dataset Testing: Provide users with a set of "perfectly matched" STEP and DXF files to ensure the system consistently yields a 100% Match Score and PASS status.
+2. Defect Injection Trials: Provide users with models where the 2D drawing has intentional flaws (e.g., shifted holes, missing fillets, extra construction lines). Users will verify that the tool correctly flags and highlights the specific modifications.
+3. Orientation and Scaling Tests: Have users test the GUI's "Rotate drawing views" and "Drawing scale" features to ensure mismatched coordinates can be manually aligned when the drawing orientation differs from the CAD coordinate system.
+4. Boundary Condition Testing: Test large assemblies to evaluate the performance (HLR computation times) and verify the fallback mechanisms for DWG-to-DXF conversion when ODA Converter is absent.
+
+6. Any Other Aspect
+- Robust Multi-Modal Architecture: By using both Vector/Geometric comparisons and Raster/Image-based comparisons, the tool avoids the common pitfalls of relying on just one method. If the geometric parser fails to interpret a complex spline from a DXF, the visual image comparator serves as a robust fallback.
+- Heuristic Spatial Clustering: The codebase implements a custom Union-Find spatial clustering algorithm to isolate the dominant view geometry in a DXF, effectively ignoring title blocks, borders, and stray annotations without requiring complex AI.

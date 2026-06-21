@@ -51,6 +51,13 @@ def _require_ocp() -> None:
 
 logger = logging.getLogger(__name__)
 
+MODEL_PROJECTION_VIEW_MAP = {
+    ViewName.TOP: ViewName.BOTTOM,
+    ViewName.BOTTOM: ViewName.TOP,
+    ViewName.LEFT: ViewName.RIGHT,
+    ViewName.RIGHT: ViewName.LEFT,
+}
+
 
 class Projector:
     """
@@ -94,12 +101,18 @@ class Projector:
             An HLRAlgo_Projector configured for the given view.
         """
         _require_ocp()
-        view_def = VIEW_DEFINITIONS[view]
+        projection_view = MODEL_PROJECTION_VIEW_MAP.get(view, view)
+        view_def = VIEW_DEFINITIONS[projection_view]
         direction = view_def["direction"]
         up = view_def["up"]
 
-        logger.info("Creating projector for %s view — direction=%s, up=%s",
-                     view.value, direction, up)
+        logger.info(
+            "Creating projector for %s view using %s model projection: direction=%s, up=%s",
+            view.value,
+            projection_view.value,
+            direction,
+            up,
+        )
 
         # The Ax2 for HLR:
         # - Origin: a point along the view direction far from the shape
@@ -147,7 +160,8 @@ class Projector:
         Returns:
             Dict with 'right' and 'up' as 3D numpy arrays.
         """
-        view_def = VIEW_DEFINITIONS[view]
+        projection_view = MODEL_PROJECTION_VIEW_MAP.get(view, view)
+        view_def = VIEW_DEFINITIONS[projection_view]
         direction = np.array(view_def["direction"], dtype=np.float64)
         up = np.array(view_def["up"], dtype=np.float64)
 

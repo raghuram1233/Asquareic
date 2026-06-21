@@ -23,13 +23,13 @@ from datetime import datetime
 from pathlib import Path
 from tkinter import (
     BOTH,
+    Canvas,
     DISABLED,
     END,
     HORIZONTAL,
     LEFT,
     NORMAL,
     RIGHT,
-    TOP,
     StringVar,
     Tk,
     filedialog,
@@ -154,7 +154,7 @@ def prepare_drawing_views(drawing_path: Path, output_dir: Path, log: logging.Log
 class CadDiffGui:
     def __init__(self, root: Tk):
         self.root = root
-        self.root.title("CAD View Difference Inspector")
+        self.root.title("CAD Checker")
         self.root.geometry("1180x820")
         self.root.minsize(980, 700)
 
@@ -164,15 +164,19 @@ class CadDiffGui:
         self.step_path = StringVar(value=str(Path("Data/Model.STEP")))
         self.drawing_path = StringVar(value=str(Path("Data/drawing.dwg")))
         self.output_dir = StringVar(value=str(Path("gui_results")))
+        self.drawing_scale = StringVar(value="1.0")
+        self.view_rotations = {view: StringVar(value="0") for view in VIEW_ORDER}
         self.status = StringVar(value="Choose files and run comparison.")
         self.score = StringVar(value="")
         self.view_title = StringVar(value="No results yet")
         self.report_data: dict = {}
         self.image_cache: PhotoImage | None = None
         self.result_dir: Path | None = None
+        self.history_runs: dict[str, Path] = {}
 
         self._build_style()
         self._build_layout()
+        self._refresh_history()
         self.root.after(120, self._poll_messages)
 
     def _build_style(self) -> None:
@@ -191,8 +195,28 @@ class CadDiffGui:
         style.map("TRadiobutton", background=[("active", "#1b2638")])
 
     def _build_layout(self) -> None:
-        main = ttk.Frame(self.root, padding=18)
-        main.pack(fill=BOTH, expand=True)
+        shell = ttk.Frame(self.root)
+        shell.pack(fill=BOTH, expand=True)
+
+        self.scroll_canvas = Canvas(shell, bg="#10151f", highlightthickness=0)
+        scrollbar = ttk.Scrollbar(shell, orient="vertical", command=self.scroll_canvas.yview)
+        self.scroll_canvas.configure(yscrollcommand=scrollbar.set)
+
+        scrollbar.pack(side=RIGHT, fill="y")
+        self.scroll_canvas.pack(side=LEFT, fill=BOTH, expand=True)
+
+        main = ttk.Frame(self.scroll_canvas, padding=18)
+        self.scroll_window = self.scroll_canvas.create_window((0, 0), window=main, anchor="nw")
+
+        main.bind(
+            "<Configure>",
+            lambda _event: self.scroll_canvas.configure(scrollregion=self.scroll_canvas.bbox("all")),
+        )
+        self.scroll_canvas.bind(
+            "<Configure>",
+            lambda event: self.scroll_canvas.itemconfigure(self.scroll_window, width=event.width),
+        )
+        self.scroll_canvas.bind_all("<MouseWheel>", self._on_mousewheel)
 
         ttk.Label(main, text="CAD View Difference Inspector", style="Title.TLabel").pack(anchor="w")
         ttk.Label(
@@ -207,15 +231,71 @@ class CadDiffGui:
         self._file_row(inputs, "STEP model", self.step_path, self._browse_step, 0)
         self._file_row(inputs, "DWG / DXF drawing", self.drawing_path, self._browse_drawing, 1)
         self._file_row(inputs, "Output folder", self.output_dir, self._browse_output, 2)
+        ttk.Label(inputs, text="Drawing scale", style="Panel.TLabel").grid(
+            row=3, column=0, sticky="w", pady=4
+        )
+        scale_entry = ttk.Entry(inputs, textvariable=self.drawing_scale, width=16)
+        scale_entry.grid(row=3, column=1, sticky="w", padx=10, pady=4)
+        ttk.Label(
+            inputs,
+            text="Drawing units multiplied by this value before geometry comparison",
+            style="Panel.TLabel",
+        ).grid(row=3, column=1, sticky="w", padx=(150, 10), pady=4)
+
+        rotations = ttk.Frame(inputs, style="Panel.TFrame")
+        rotations.grid(row=4, column=0, columnspan=3, sticky="ew", pady=(10, 0))
+        ttk.Label(rotations, text="Rotate drawing views before comparison", style="Panel.TLabel").pack(anchor="w")
+        rotation_grid = ttk.Frame(rotations, style="Panel.TFrame")
+        rotation_grid.pack(fill="x", pady=(6, 0))
+        rotation_options = ("0", "90", "180", "270")
+        for idx, view in enumerate(VIEW_ORDER):
+            cell = ttk.Frame(rotation_grid, style="Panel.TFrame")
+            cell.grid(row=idx // 3, column=idx % 3, sticky="w", padx=(0, 28), pady=4)
+            ttk.Label(cell, text=view.upper(), style="Panel.TLabel").pack(side=LEFT, padx=(0, 8))
+            ttk.Combobox(
+                cell,
+                textvariable=self.view_rotations[view],
+                values=rotation_options,
+                width=6,
+                state="readonly",
+            ).pack(side=LEFT)
 
         actions = ttk.Frame(inputs, style="Panel.TFrame")
-        actions.grid(row=3, column=1, columnspan=2, sticky="ew", pady=(10, 0))
+        actions.grid(row=5, column=1, columnspan=2, sticky="ew", pady=(10, 0))
         self.run_button = ttk.Button(actions, text="Run Comparison", style="Accent.TButton", command=self._run)
         self.run_button.pack(side=LEFT)
         self.open_button = ttk.Button(actions, text="Open Report Folder", command=self._open_report, state=DISABLED)
         self.open_button.pack(side=LEFT, padx=(8, 0))
         self.progress = ttk.Progressbar(actions, mode="indeterminate", orient=HORIZONTAL, length=220)
         self.progress.pack(side=RIGHT, padx=(8, 0))
+
+        history = ttk.Frame(inputs, style="Panel.TFrame")
+        history.grid(row=6, column=0, columnspan=3, sticky="ew", pady=(12, 0))
+        ttk.Label(history, text="Past runs", style="Panel.TLabel").pack(anchor="w")
+        self.history_tree = ttk.Treeview(
+            history,
+            columns=("run", "score", "status", "generated"),
+            show="headings",
+            height=4,
+        )
+        self.history_tree.heading("run", text="Run")
+        self.history_tree.heading("score", text="Score")
+        self.history_tree.heading("status", text="Status")
+        self.history_tree.heading("generated", text="Generated")
+        self.history_tree.column("run", width=250, anchor="w")
+        self.history_tree.column("score", width=80, anchor="center")
+        self.history_tree.column("status", width=90, anchor="center")
+        self.history_tree.column("generated", width=210, anchor="w")
+        self.history_tree.pack(fill="x", pady=(6, 8))
+        self.history_tree.bind("<Double-1>", lambda _event: self._load_selected_history())
+
+        history_buttons = ttk.Frame(history, style="Panel.TFrame")
+        history_buttons.pack(fill="x")
+        ttk.Button(history_buttons, text="Refresh Runs", command=self._refresh_history).pack(side=LEFT)
+        ttk.Button(history_buttons, text="Load Selected Run", command=self._load_selected_history).pack(
+            side=LEFT,
+            padx=(8, 0),
+        )
 
         ttk.Label(main, textvariable=self.status, style="Muted.TLabel").pack(anchor="w", pady=(0, 8))
 
@@ -248,10 +328,8 @@ class CadDiffGui:
         self.next_button = ttk.Button(nav, text="Next View", command=self._next_view, state=DISABLED)
         self.next_button.pack(side=LEFT, padx=(8, 0))
 
-        log_frame = ttk.Frame(main, padding=(0, 12, 0, 0))
-        log_frame.pack(fill="x")
-        self.log_box = ttk.Treeview(log_frame, columns=("message",), show="", height=5)
-        self.log_box.pack(fill="x")
+    def _on_mousewheel(self, event) -> None:
+        self.scroll_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
     def _file_row(self, parent, label: str, variable: StringVar, command, row: int) -> None:
         ttk.Label(parent, text=label, style="Panel.TLabel").grid(row=row, column=0, sticky="w", pady=4)
@@ -280,11 +358,17 @@ class CadDiffGui:
         path = filedialog.askdirectory(title="Select output folder")
         if path:
             self.output_dir.set(path)
+            self._refresh_history()
 
     def _run(self) -> None:
         step = Path(self.step_path.get()).expanduser()
         drawing = Path(self.drawing_path.get()).expanduser()
         output = Path(self.output_dir.get()).expanduser()
+        try:
+            drawing_scale = float(self.drawing_scale.get())
+        except ValueError:
+            messagebox.showerror("Invalid scale", "Drawing scale must be a number greater than zero.")
+            return
 
         if not step.exists():
             messagebox.showerror("Missing STEP", f"STEP file not found:\n{step}")
@@ -292,14 +376,33 @@ class CadDiffGui:
         if not drawing.exists():
             messagebox.showerror("Missing drawing", f"Drawing file not found:\n{drawing}")
             return
+        if drawing_scale <= 0:
+            messagebox.showerror("Invalid scale", "Drawing scale must be greater than zero.")
+            return
+        view_rotations = {
+            view: float(rotation.get())
+            for view, rotation in self.view_rotations.items()
+            if float(rotation.get()) != 0.0
+        }
 
         self._set_running(True)
         self._clear_log()
         self.status.set("Running comparison...")
-        worker = threading.Thread(target=self._run_worker, args=(step, drawing, output), daemon=True)
+        worker = threading.Thread(
+            target=self._run_worker,
+            args=(step, drawing, output, drawing_scale, view_rotations),
+            daemon=True,
+        )
         worker.start()
 
-    def _run_worker(self, step: Path, drawing: Path, output: Path) -> None:
+    def _run_worker(
+        self,
+        step: Path,
+        drawing: Path,
+        output: Path,
+        drawing_scale: float,
+        view_rotations: dict[str, float],
+    ) -> None:
         logger = logging.getLogger()
         handler = QueueLogHandler(self.messages)
         handler.setFormatter(
@@ -319,7 +422,19 @@ class CadDiffGui:
             run_dir.mkdir(parents=True, exist_ok=True)
             drawing_views = prepare_drawing_views(drawing, run_dir, logging.getLogger(__name__))
 
-            config = PipelineConfig(views=list(ViewName), output_dir=str(run_dir))
+            config = PipelineConfig(
+                views=list(ViewName),
+                output_dir=str(run_dir),
+                drawing_scale=drawing_scale,
+                drawing_view_rotations={
+                    ViewName(view): degrees
+                    for view, degrees in view_rotations.items()
+                },
+            )
+            logging.getLogger(__name__).info(
+                "Geometry comparison will use drawing scale %.6f and preserve orientation.",
+                drawing_scale,
+            )
             report = Pipeline(config).run(str(step), drawing_views)
             self.messages.put(("done", {"run_dir": run_dir, "passed": report.passed}))
         except Exception as exc:
@@ -332,12 +447,12 @@ class CadDiffGui:
             while True:
                 kind, payload = self.messages.get_nowait()
                 if kind == "log":
-                    self._append_log(str(payload))
-                    self.status.set(str(payload))
+                    self.status.set("Running comparison...")
                 elif kind == "done":
                     self._set_running(False)
                     self.result_dir = Path(payload["run_dir"])
                     self._load_results()
+                    self._refresh_history()
                     self.open_button.configure(state=NORMAL)
                     status = "passed" if payload["passed"] else "completed with differences"
                     self.status.set(f"Comparison {status}. Results: {self.result_dir}")
@@ -370,6 +485,51 @@ class CadDiffGui:
         self.prev_button.configure(state=NORMAL)
         self.next_button.configure(state=NORMAL)
         self._refresh_image()
+
+    def _refresh_history(self) -> None:
+        if not hasattr(self, "history_tree"):
+            return
+
+        for item in self.history_tree.get_children():
+            self.history_tree.delete(item)
+        self.history_runs.clear()
+
+        output = Path(self.output_dir.get()).expanduser()
+        if not output.exists():
+            return
+
+        runs: list[tuple[float, Path, dict]] = []
+        for report_path in output.glob("run_*/validation_report.json"):
+            try:
+                data = json.loads(report_path.read_text())
+            except (OSError, json.JSONDecodeError):
+                data = {}
+            runs.append((report_path.parent.stat().st_mtime, report_path.parent, data))
+
+        for _mtime, run_dir, data in sorted(runs, reverse=True):
+            score = data.get("image_comparison_overall", data.get("overall_score"))
+            score_text = f"{score:.1%}" if isinstance(score, (int, float)) else "N/A"
+            status = "Passed" if data.get("passed") else "Diffs"
+            generated = data.get("generated_at", "")
+            item = self.history_tree.insert(
+                "",
+                END,
+                values=(run_dir.name, score_text, status, generated),
+            )
+            self.history_runs[item] = run_dir
+
+    def _load_selected_history(self) -> None:
+        selection = self.history_tree.selection()
+        if not selection:
+            messagebox.showinfo("Past runs", "Select a previous run first.")
+            return
+        run_dir = self.history_runs.get(selection[0])
+        if run_dir is None:
+            return
+        self.result_dir = run_dir
+        self._load_results()
+        self.open_button.configure(state=NORMAL)
+        self.status.set(f"Loaded past run: {run_dir}")
 
     def _refresh_image(self) -> None:
         if self.result_dir is None:
@@ -419,16 +579,10 @@ class CadDiffGui:
             os.startfile(self.result_dir)
 
     def _append_log(self, message: str) -> None:
-        self.log_box.insert("", END, values=(message,))
-        children = self.log_box.get_children()
-        if len(children) > 80:
-            self.log_box.delete(children[0])
-        if children:
-            self.log_box.see(children[-1])
+        return
 
     def _clear_log(self) -> None:
-        for item in self.log_box.get_children():
-            self.log_box.delete(item)
+        return
 
 
 def main() -> None:
