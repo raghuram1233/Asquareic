@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   // Initialize subsystems
+  initTheme();
   initTabs();
   initDiagnostics();
   initFileBrowser();
@@ -9,6 +10,40 @@ document.addEventListener("DOMContentLoaded", () => {
   initPanZoom("cad-zoom-viewport", "cad-zoom-content", "cad-zoom-in", "cad-zoom-out", "cad-zoom-reset");
   initPanZoom("dim-zoom-viewport", "dim-zoom-content", "dim-zoom-in", "dim-zoom-out", "dim-zoom-reset");
 });
+
+// =============================================================================
+// Theme Toggle (Dark / Light)
+// =============================================================================
+function initTheme() {
+  const root = document.documentElement;
+  const toggleBtn = document.getElementById("btn-theme-toggle");
+  const themeIcon = document.getElementById("theme-icon");
+
+  // Restore saved preference (default: dark)
+  const saved = localStorage.getItem("asquareic-theme") || "dark";
+  applyTheme(saved);
+
+  toggleBtn.addEventListener("click", () => {
+    const current = root.getAttribute("data-theme") === "light" ? "light" : "dark";
+    const next = current === "dark" ? "light" : "dark";
+    applyTheme(next);
+    localStorage.setItem("asquareic-theme", next);
+  });
+
+  function applyTheme(theme) {
+    if (theme === "light") {
+      root.setAttribute("data-theme", "light");
+      themeIcon.textContent = "dark_mode";
+      toggleBtn.title = "Switch to dark theme";
+    } else {
+      root.removeAttribute("data-theme");
+      themeIcon.textContent = "light_mode";
+      toggleBtn.title = "Switch to light theme";
+    }
+  }
+}
+
+
 
 // =============================================================================
 // Tab Switching Manager

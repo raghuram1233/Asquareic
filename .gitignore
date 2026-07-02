@@ -3,6 +3,8 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.dwl
+*.dwl2
 
 # Editor & OS Metadata
 .vscode/
@@ -26,3 +28,6 @@ Asquareic_Nozzle_Load/reports/
 
 # Unified Dashboard runs and outputs
 Asquareic_Unified_Dashboard/runs/
+
+# Other Temp Files
+Arduino

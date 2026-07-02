@@ -143,7 +143,10 @@ class HLREngine:
         projectors: Dict[ViewName, HLRAlgo_Projector],
     ) -> Dict[ViewName, HLRResult]:
         """
-        Run HLR for all provided views.
+        Run HLR for all provided views in parallel using a thread pool.
+
+        Each view creates its own HLRBRep_Algo instance, so there are no
+        shared mutable objects — parallel execution is safe.
 
         Args:
             projectors: Dict mapping ViewName to its projector.
@@ -151,7 +154,18 @@ class HLREngine:
         Returns:
             Dict mapping ViewName to its HLRResult.
         """
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
         results = {}
-        for view_name, projector in projectors.items():
-            results[view_name] = self.compute(view_name, projector)
+        view_items = list(projectors.items())
+
+        with ThreadPoolExecutor(max_workers=min(len(view_items), 6)) as pool:
+            future_to_view = {
+                pool.submit(self.compute, view_name, projector): view_name
+                for view_name, projector in view_items
+            }
+            for future in as_completed(future_to_view):
+                view_name = future_to_view[future]
+                results[view_name] = future.result()
+
         return results

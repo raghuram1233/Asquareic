@@ -154,8 +154,17 @@ class STEPLoader:
 
     @staticmethod
     def _heal_shape(shape: TopoDS_Shape) -> TopoDS_Shape:
-        """Apply shape fixing to repair B-Rep topology issues."""
-        logger.info("Healing shape...")
+        """Apply shape fixing to repair B-Rep topology issues.
+
+        Skips healing if BRepCheck_Analyzer reports the shape is already valid,
+        which avoids a 10-30s penalty on clean STEP files.
+        """
+        analyzer = BRepCheck_Analyzer(shape)
+        if analyzer.IsValid():
+            logger.info("Shape is already valid — skipping healing step")
+            return shape
+
+        logger.info("Shape has defects — running healing pass...")
         fixer = ShapeFix_Shape(shape)
         fixer.Perform()
         healed = fixer.Shape()

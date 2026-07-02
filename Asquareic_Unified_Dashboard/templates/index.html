@@ -4,12 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Asquareic Engineering CAD Validator & Checker Dashboard</title>
-  <!-- Material Icons for sleek ui symbols -->
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
-  <!-- Google Fonts: Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Material Icons (served locally — offline safe) -->
+  <link rel="stylesheet" href="/static/fonts/material-icons.css">
+  <!-- Google Fonts: Inter + JetBrains Mono (served locally — offline safe) -->
+  <link rel="stylesheet" href="/static/fonts/fonts.css">
   <!-- CSS Styling link -->
   <link rel="stylesheet" href="/static/css/style.css">
 </head>
@@ -71,6 +69,9 @@
         <button id="btn-refresh-status" class="btn btn-secondary">
           <span class="material-icons-outlined">refresh</span>
           <span>Refresh Diagnostic</span>
+        </button>
+        <button id="btn-theme-toggle" class="btn btn-secondary btn-theme" title="Toggle light / dark theme">
+          <span class="material-icons-outlined" id="theme-icon">light_mode</span>
         </button>
       </div>
     </header>

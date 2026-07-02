@@ -2,7 +2,7 @@
    Reset & Variables System
    ============================================================================= */
 :root {
-  /* Color Palette (HSL Tailored) */
+  /* Color Palette (HSL Tailored) — Dark Mode */
   --bg-primary: hsl(220, 20%, 8%);
   --bg-secondary: hsl(220, 18%, 13%);
   --bg-tertiary: hsl(220, 16%, 18%);
@@ -32,6 +32,38 @@
   --header-height: 80px;
   --transition-fast: 0.18s ease;
   --transition-medium: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  --terminal-bg: #05070a;
+}
+
+/* ── Light Theme Variables ───────────────────────────────────────────── */
+[data-theme="light"] {
+  --bg-primary: hsl(220, 20%, 96%);
+  --bg-secondary: hsl(220, 20%, 100%);
+  --bg-tertiary: hsl(220, 18%, 93%);
+  --border-color: hsl(220, 12%, 82%);
+  --border-focus: hsl(210, 85%, 50%);
+
+  --text-primary: hsl(220, 25%, 12%);
+  --text-muted: hsl(220, 12%, 45%);
+  --text-inverse: hsl(220, 25%, 92%);
+
+  --accent-blue: hsl(210, 85%, 46%);
+  --accent-blue-hover: hsl(210, 85%, 39%);
+  --accent-blue-alpha: hsla(210, 85%, 46%, 0.10);
+
+  --accent-emerald: hsl(150, 65%, 30%);
+  --accent-emerald-hover: hsl(150, 65%, 24%);
+  --accent-emerald-alpha: hsla(150, 65%, 30%, 0.12);
+
+  --accent-crimson: hsl(350, 70%, 42%);
+  --accent-crimson-hover: hsl(350, 70%, 35%);
+  --accent-crimson-alpha: hsla(350, 70%, 42%, 0.12);
+
+  --accent-amber: hsl(42, 85%, 40%);
+  --accent-amber-alpha: hsla(42, 85%, 40%, 0.12);
+
+  --card-shadow: 0 2px 12px hsla(220, 20%, 20%, 0.10);
+  --terminal-bg: hsl(220, 15%, 16%);
 }
 
 * {
@@ -49,6 +81,7 @@ body {
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* Custom Scrollbars */
@@ -212,6 +245,15 @@ body {
   font-size: 12.5px;
   color: var(--text-muted);
 }
+
+.header-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
 
 .content-body {
   flex-grow: 1;
@@ -379,8 +421,26 @@ select:focus {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: var(--transition-fast);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
   outline: none;
+}
+
+/* Theme toggle — square icon-only button */
+.btn-theme {
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 8px;
+}
+
+.btn-theme .material-icons-outlined {
+  font-size: 20px !important;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.btn-theme:hover .material-icons-outlined {
+  transform: rotate(30deg);
 }
 
 .btn span {
@@ -949,7 +1009,7 @@ select:focus {
 
 .terminal-body {
   flex-grow: 1;
-  background-color: #05070a;
+  background-color: var(--terminal-bg);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   font-family: 'JetBrains Mono', monospace;
