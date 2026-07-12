@@ -15,7 +15,17 @@ import os
 import re
 import sys
 
-ODA_PATH = r"C:\Program Files\ODA\ODAFileConverter 27.1.0\ODAFileConverter.exe"
+def find_oda_converter():
+    import shutil
+    from pathlib import Path
+    exe = shutil.which("ODAFileConverter")
+    if exe:
+        return exe
+    candidates = sorted(
+        Path("C:/Program Files/ODA").glob("ODAFileConverter*/ODAFileConverter.exe"),
+        reverse=True
+    )
+    return str(candidates[0]) if candidates else None
 
 
 # ---------------------------------------------------------------------------
@@ -30,7 +40,10 @@ def select_file():
 def load_doc(path):
     if path.lower().endswith('.dwg'):
         from ezdxf.addons import odafc
-        odafc.win_exec_path = ODA_PATH
+        oda_path = find_oda_converter()
+        if not oda_path:
+            raise RuntimeError("ODAFileConverter not found. Please install it or make sure it is on PATH.")
+        odafc.win_exec_path = oda_path
         return odafc.readfile(path)
     return ezdxf.readfile(path)
 

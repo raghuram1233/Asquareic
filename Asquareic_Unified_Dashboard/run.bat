@@ -108,7 +108,46 @@ if "%PYTHON_MAJOR%" neq "3" (
 
 echo Using Python: !PYTHON_CMD! (Version 3)
 
-:: 4. Verify/Install dependencies
+:: 4. Verify/Install ODA File Converter
+echo.
+echo Checking for ODA File Converter...
+set ODA_FOUND=0
+where ODAFileConverter.exe >nul 2>&1
+if !errorlevel! equ 0 (
+    set ODA_FOUND=1
+    echo ODA File Converter is already in PATH.
+) else (
+    for /d %%D in ("%ProgramFiles%\ODA\ODAFileConverter*") do (
+        if exist "%%D\ODAFileConverter.exe" (
+            set "PATH=%%D;!PATH!"
+            set ODA_FOUND=1
+            echo Found ODA File Converter in program files and added to session PATH.
+            powershell -Command "$p = [Environment]::GetEnvironmentVariable('Path', 'User'); if ($p -notlike '*%%D*') { [Environment]::SetEnvironmentVariable('Path', $p + ';%%D', 'User'); echo 'Permanent PATH updated.' }" >nul 2>&1
+        )
+    )
+)
+
+if !ODA_FOUND! equ 0 (
+    echo ODA File Converter not found. Installing via winget...
+    winget install -e --id ODA.ODAFileConverter --silent --accept-source-agreements --accept-package-agreements >nul 2>&1
+    if !errorlevel! equ 0 (
+        echo ODA File Converter installed successfully.
+        :: Re-check and update PATH
+        for /d %%D in ("%ProgramFiles%\ODA\ODAFileConverter*") do (
+            if exist "%%D\ODAFileConverter.exe" (
+                set "PATH=%%D;!PATH!"
+                set ODA_FOUND=1
+                powershell -Command "$p = [Environment]::GetEnvironmentVariable('Path', 'User'); if ($p -notlike '*%%D*') { [Environment]::SetEnvironmentVariable('Path', $p + ';%%D', 'User') }" >nul 2>&1
+            )
+        )
+    ) else (
+        echo WARNING: Failed to install ODA File Converter via winget automatically.
+        echo Please install it manually from: https://www.opendesign.com/guestfiles/oda_file_converter
+    )
+)
+
+
+:: 5. Verify/Install dependencies
 echo.
 echo Checking and installing Python dependencies...
 !PYTHON_CMD! -m pip install --upgrade pip

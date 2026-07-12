@@ -18,6 +18,15 @@ Asquareic_Cad_Validator/gui_results/
 Asquareic_Cad_Validator/Data/
 Asquareic_Cad_Validator/Data2/
 Asquareic_Cad_Validator/Data_gen/
+Asquareic_Dimension_validator/Input
+Asquareic_Notes_checker\inputs
+Asquareic_Notes_checker\MDS
+Asquareic_Notes_checker\reports
+Asquareic_Notes_checker\Solidworks 3-d model
+Asquareic_Notes_checker\Asquareic_Notes_checker_documentation.md
+Asquareic_Nozzle_Load\Input
+Asquareic_Nozzle_Load\intermediate
+Asquareic_Nozzle_Load\reports
 
 # Notes Checker reports
 Asquareic_Notes_checker/reports/
@@ -31,3 +40,4 @@ Asquareic_Unified_Dashboard/runs/
 
 # Other Temp Files
 Arduino
+motor_data
