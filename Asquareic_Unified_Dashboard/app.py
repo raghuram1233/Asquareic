@@ -174,8 +174,7 @@ def browse():
         dirs = []
         files = []
         
-        # Allowed file extensions for selection
-        allowed_exts = {".dwg", ".dxf", ".step", ".stp", ".docx", ".csv", ".xlsx", ".html", ".png"}
+        allowed_exts = {".dwg", ".dxf", ".step", ".stp", ".docx", ".csv", ".xlsx", ".html", ".png", ".pdf"}
         
         for item in target_path.iterdir():
             if item.name.startswith(".") or item.name.startswith("__"):
@@ -538,9 +537,8 @@ def run_nozzle_validator():
     temp = data.get("temp", 58.0)
     derating = data.get("derating", 1.0)
     ref_doc = data.get("ref_doc", "AGES-SP-06-001 Rev.1 Table A2-2")
-    
     if not drawing or not allowables:
-        return jsonify({"error": "Missing 'drawing' or 'allowables' CSV path"}), 400
+        return jsonify({"error": "Missing 'drawing' or 'allowables' file path"}), 400
         
     task_id = f"nozzle_val_{int(time.time())}"
     task_dir = RUNS_DIR / task_id
